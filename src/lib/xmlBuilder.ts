@@ -3,20 +3,29 @@ import {create} from "xmlbuilder2";
 import type {XMLBuilder} from "xmlbuilder2/lib/interfaces";
 
 export interface CodeBuilder {
-    build(controlHub: MotorLynxModule, expansionHub: MotorLynxModule, servoHub: LynxModule): string;
+    build(controlHub: MotorLynxModule, hubs: LynxModule[]): string;
+}
+
+export function isMotorLynxModule(hub: LynxModule): hub is MotorLynxModule {
+    return 'motors' in hub && Array.isArray((hub as MotorLynxModule).motors);
 }
 
 class XmlBuilder implements CodeBuilder {
-    build(controlHub: MotorLynxModule, expansionHub: MotorLynxModule, servoHub: LynxModule): string {
+    build(controlHub: MotorLynxModule, hubs: LynxModule[]): string {
         const doc = create({version: '1.0', standalone: true, encoding: "UTF-8"})
             .ele("Robot", {type: "FirstInspires-FTC"})
             .ele("LynxUsbDevice", {name: "Control Hub Portal", serialNumber: "(embedded)", parentModuleAddress: 173})
         const controlHubBuilder = doc.ele("LynxModule", {name: "Control Hub", port: 173});
         XmlBuilder.buildMotorLynxModule(controlHubBuilder, controlHub);
-        const expansionHubBuilder = doc.ele("LynxModule", {name: "Expansion Hub 0", port: 0});
-        XmlBuilder.buildMotorLynxModule(expansionHubBuilder, expansionHub);
-        const servoHubBuilder = doc.ele("LynxModule", {name: "Servo Hub 1", port: 1});
-        XmlBuilder.buildLynxModule(servoHubBuilder, servoHub);
+        
+        hubs.forEach((hub, index) => {
+            const hubBuilder = doc.ele("LynxModule", {name: `${hub.name} ${index}`, port: index});
+            if (isMotorLynxModule(hub)) {
+                XmlBuilder.buildMotorLynxModule(hubBuilder, hub);
+            } else {
+                XmlBuilder.buildLynxModule(hubBuilder, hub);
+            }
+        })
 
         return doc.end({prettyPrint: true});
     }

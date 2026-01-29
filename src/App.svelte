@@ -1,13 +1,17 @@
 <script lang="ts">
     import Hub from "./lib/Hub.svelte";
     import CodeDisplay from "./lib/CodeDisplay.svelte";
-    import xmlBuilder from "./lib/xmlBuilder.js";
+    import xmlBuilder, { isMotorLynxModule } from "./lib/xmlBuilder.js";
     import {createEmptyLynxModule, createEmptyMotorLynxModule, type LynxModule, type MotorLynxModule} from "./lib";
     import MotorHub from "./lib/MotorHub.svelte";
 
-    let controlHub: MotorLynxModule = $state(createEmptyMotorLynxModule());
-    let expansionHub: MotorLynxModule = $state(createEmptyMotorLynxModule());
-    let servoHub: LynxModule = $state(createEmptyLynxModule());
+    let controlHub: MotorLynxModule = $state(createEmptyMotorLynxModule("Control Hub"));
+    let expansionHub: MotorLynxModule = $state(createEmptyMotorLynxModule("Expansion Hub"));
+    let servoHub: LynxModule = $state(createEmptyLynxModule("Servo Hub"));
+    const getHubs: LynxModule[] = [
+        expansionHub, 
+        servoHub
+    ];
 
     let configuring = $state(true);
 </script>
@@ -15,14 +19,19 @@
 <div class="min-h-dvh grid lg:grid-cols-2 lg:p-6 gap-6 bg-base-100">
     <div class:hidden={configuring}
          class="max-w-screen mb-16 lg:mb-0 lg:block bg-base-200 p-4 lg:p-6 lg:rounded-md lg:shadow-sm lg:border-2 lg:border-base-content/20">
-        <CodeDisplay codeBuilder={xmlBuilder} {controlHub} {expansionHub} {servoHub}/>
+        <CodeDisplay codeBuilder={xmlBuilder} {controlHub} hubs={getHubs}/>
     </div>
     <div class:hidden={!configuring}
          class="lg:block bg-base-200 mb-16 lg:mb-0 lg:rounded-md lg:shadow-sm lg:border-2 lg:border-base-content/20 p-4 lg:p-6">
         <div class="tabs tabs-lift h-[calc(100%---spacing(10))]">
             <MotorHub name="Control Hub" bind:module={controlHub} checked={true}/>
-            <MotorHub name="Expansion Hub" bind:module={expansionHub}/>
-            <Hub name="Servo Hub" bind:module={servoHub}/>
+            {#each getHubs as _, i}
+                {#if isMotorLynxModule(getHubs[i])}
+                    <MotorHub name={getHubs[i].name} bind:module={getHubs[i]}/>
+                {:else}
+                    <Hub name={getHubs[i].name} bind:module={getHubs[i]}/>
+                {/if}
+            {/each}
         </div>
     </div>
 </div>

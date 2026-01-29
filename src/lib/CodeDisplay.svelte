@@ -3,19 +3,17 @@
 
     import hljs from "highlight.js";
     import type {Action} from "svelte/action";
-    import type {LynxModule, MotorLynxModule} from "./index";
+    import {createEmptyLynxModule, type LynxModule, type MotorLynxModule} from "./index";
     import type {CodeBuilder} from "./xmlBuilder";
 
     interface Props {
         controlHub: MotorLynxModule;
-        expansionHub: MotorLynxModule;
-        servoHub: LynxModule;
+        hubs: LynxModule[];
         codeBuilder: CodeBuilder;
     }
 
-    let {controlHub, expansionHub, servoHub, codeBuilder}: Props = $props();
-
-    let code = $derived(codeBuilder.build(controlHub, expansionHub, servoHub))
+    let {controlHub, hubs, codeBuilder}: Props = $props();
+    let code = $derived(codeBuilder.build(controlHub, hubs))
 
     onMount(() => {
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
